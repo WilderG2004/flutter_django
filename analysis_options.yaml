@@ -1,0 +1,47 @@
+include: package:flutter_lints/flutter.yaml
+
+# Reglas de análisis adicionales
+linter:
+  rules:
+    # Reglas generales para mantener el código limpio
+    always_declare_return_types: true  # Siempre declarar el tipo de retorno de las funciones.
+    prefer_final_fields: true  # Preferir el uso de `final` en campos de clase inmutables.
+    avoid_print: true  # Evitar el uso de `print` en el código de producción.
+    prefer_const_constructors: true  # Preferir constructores `const` cuando sea posible.
+    prefer_final_locals: true  # Preferir el uso de `final` para variables locales.
+    avoid_renaming_method_parameters: true  # Evitar renombrar parámetros de métodos innecesariamente.
+    use_key_in_widget_constructors: true  # Utilizar `key` en los constructores de los widgets.
+
+    # Buenas prácticas en cuanto a la estructura del código y las convenciones de estilo
+    avoid_positional_boolean_parameters: true  # Evitar parámetros booleanos posicionales.
+    sort_constructors_first: true  # Ordenar los constructores antes de los métodos en las clases.
+    always_use_package_imports: true  # Usar importaciones de paquete en lugar de importaciones relativas.
+    avoid_function_literals_in_foreach_calls: true  # Evitar literales de función en llamadas `forEach`.
+
+    # Reglas de formato y estilo
+    prefer_single_quotes: true  # Preferir comillas simples en lugar de dobles en el código Dart.
+    use_trailing_comma: true  # Utilizar comas finales en las listas, mapas y argumentos de funciones.
+    type_annotate_public_apis: true  # Asegurarse de que las funciones públicas tengan anotaciones de tipo.
+
+    # Reglas de optimización del código
+    avoid_returning_null_for_void: true  # Evitar devolver `null` en funciones `void`.
+    unnecessary_this: true  # Evitar el uso innecesario de `this` en las clases.
+    unnecessary_null_comparison: true  # Evitar comparaciones innecesarias con `null`.
+    prefer_adjacent_string_concatenation: true  # Usar concatenación de cadenas adyacentes en lugar de `+`.
+    prefer_is_empty: true  # Preferir `isEmpty` sobre comprobaciones de longitud `== 0`.
+
+# Configuración del analizador
+analyzer:
+  exclude:
+    - '**/test/**'  # Excluir los archivos de prueba del análisis.
+
+# Ignorar advertencias de ciertas partes del código si es necesario
+# Puedes agregar archivos que no necesiten ser analizados aquí
+# La mayoría de las veces no es necesario, pero puede ser útil en archivos generados o pruebas
+ignore:
+  - '**/generated/**'
+  - '**/test/**'
+
+# Especificar la versión mínima del SDK que utilizas
+environment:
+  sdk: '>=3.7.2 <4.0.0'
