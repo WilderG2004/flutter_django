@@ -3,4 +3,4 @@
   publish = "build/web"
 
 [build.environment]
-  image = "flutter"
+  image = "ghcr.io/netlify-labs/ci-cd-deploy-base:flutter-3.16"
