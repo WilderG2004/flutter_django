@@ -1,6 +1,0 @@
-[build]
-  command = "flutter build web"
-  publish = "build/web"
-
-[build.environment]
-  image = "ghcr.io/netlify-labs/ci-cd-deploy-base:flutter-3.16"

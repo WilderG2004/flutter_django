@@ -62,6 +62,9 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isLandscape = screenSize.width > screenSize.height;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -99,57 +102,61 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                     ),
                   ),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  itemCount: emergencies.length,
-                  itemBuilder: (context, index) {
-                    final emergency = emergencies[index];
-                    return Card(
-                      elevation: 4,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.red[100],
-                          radius: 28,
-                          child: const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 28),
-                        ),
-                        title: Text(
-                          emergency.tipo ?? 'Emergencia',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    return ListView.builder(
+                      padding: EdgeInsets.symmetric(horizontal: isLandscape ? screenSize.width * 0.05 : 16, vertical: 12),
+                      itemCount: emergencies.length,
+                      itemBuilder: (context, index) {
+                        final emergency = emergencies[index];
+                        return Card(
+                          elevation: 4,
+                          margin: EdgeInsets.only(bottom: 12, left: isLandscape ? screenSize.width * 0.02 : 0, right: isLandscape ? screenSize.width * 0.02 : 0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '📍 Piso: ${emergency.piso ?? 'Desconocido'}',
-                                style: GoogleFonts.poppins(fontSize: 14),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16),
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.red[100],
+                              radius: isLandscape ? 24 : 28,
+                              child: Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: isLandscape ? 20 : 28),
+                            ),
+                            title: Text(
+                              emergency.tipo ?? 'Emergencia',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: isLandscape ? 16 : 18,
                               ),
-                              Text(
-                                '👤 Usuario: ${emergency.usuario_nombre?.isNotEmpty == true ? emergency.usuario_nombre : 'Anónimo'}',
-                                style: GoogleFonts.poppins(fontSize: 14),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '📍 Piso: ${emergency.piso ?? 'Desconocido'}',
+                                    style: GoogleFonts.poppins(fontSize: isLandscape ? 12 : 14),
+                                  ),
+                                  Text(
+                                    '👤 Usuario: ${emergency.usuario_nombre?.isNotEmpty == true ? emergency.usuario_nombre : 'Anónimo'}',
+                                    style: GoogleFonts.poppins(fontSize: isLandscape ? 12 : 14),
+                                  ),
+                                  Text(
+                                    '📅 Fecha: ${emergency.fecha != null ? DateFormat('yyyy-MM-dd HH:mm').format(emergency.fecha!) : 'Sin fecha'}',
+                                    style: GoogleFonts.poppins(fontSize: isLandscape ? 12 : 14),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                '📅 Fecha: ${emergency.fecha != null ? DateFormat('yyyy-MM-dd HH:mm').format(emergency.fecha!) : 'Sin fecha'}',
-                                style: GoogleFonts.poppins(fontSize: 14),
-                              ),
-                            ],
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete_forever, color: Colors.redAccent, size: isLandscape ? 20 : 24),
+                              tooltip: 'Eliminar',
+                              onPressed: () => deleteEmergency(emergency.id),
+                            ),
                           ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
-                          tooltip: 'Eliminar',
-                          onPressed: () => deleteEmergency(emergency.id),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
                 ),

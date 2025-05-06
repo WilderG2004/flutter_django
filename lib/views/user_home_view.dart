@@ -90,6 +90,10 @@ class _UserHomeViewState extends State<UserHomeView> {
 
   @override
   Widget build(BuildContext context) {
+    // Obtener el tamaño de la pantalla
+    final screenSize = MediaQuery.of(context).size;
+    final isLandscape = screenSize.width > screenSize.height;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reportar Emergencia', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -144,31 +148,66 @@ class _UserHomeViewState extends State<UserHomeView> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: List.generate(6, (index) {
-                        String floor = index.toString();
-                        return ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              selectedFloor = floor;
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: selectedFloor == floor ? Colors.redAccent : Colors.grey[300],
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    // Adaptar la disposición de los botones de piso según la orientación
+                    isLandscape
+                        ? Wrap( // Usar Wrap para que los botones fluyan horizontalmente
+                            spacing: 8.0, // Espacio entre botones
+                            runSpacing: 4.0, // Espacio entre filas de botones
+                            children: List.generate(6, (index) {
+                              String floor = index.toString();
+                              return ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    selectedFloor = floor;
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: selectedFloor == floor ? Colors.redAccent : Colors.grey[300],
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Reducir el padding en horizontal
+                                ),
+                                child: Text(
+                                  'Piso $floor',
+                                  style: TextStyle(
+                                    color: selectedFloor == floor ? Colors.white : Colors.black,
+                                    fontSize: 14, // Reducir el tamaño de la fuente
+                                  ),
+                                ),
+                              );
+                            }),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: List.generate(6, (index) {
+                              String floor = index.toString();
+                              return Expanded( // Usar Expanded para distribuir el espacio
+                                flex: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedFloor = floor;
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: selectedFloor == floor ? Colors.redAccent : Colors.grey[300],
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                    ),
+                                    child: Text(
+                                      'Piso $floor',
+                                      style: TextStyle(
+                                        color: selectedFloor == floor ? Colors.white : Colors.black,
+                                        fontSize: 16,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
                           ),
-                          child: Text(
-                            'Piso $floor',
-                            style: TextStyle(
-                              color: selectedFloor == floor ? Colors.white : Colors.black,
-                              fontSize: 16,
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
                     const SizedBox(height: 30),
                     Text(
                       'Recomendación:',

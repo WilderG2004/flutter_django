@@ -80,6 +80,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch, // Asegura que los campos ocupen el ancho
               children: <Widget>[
                 _buildInputField('Nombre de Usuario', usernameController),
                 _buildInputField('Nombre', nameController),
@@ -152,12 +153,13 @@ class _AdminUsersViewState extends State<AdminUsersView> {
 
   Widget _buildInputField(String label, TextEditingController controller) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8), // Aumentar un poco el padding vertical
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), // Bordes más redondeados
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14), // Mayor padding interno
         ),
       ),
     );
@@ -165,6 +167,9 @@ class _AdminUsersViewState extends State<AdminUsersView> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isLandscape = screenSize.width > screenSize.height;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -174,71 +179,72 @@ class _AdminUsersViewState extends State<AdminUsersView> {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 16),
-          const AdminBanner(), // Aquí está el banner que reemplaza la imagen
-          const SizedBox(height: 10),
+          SizedBox(height: isLandscape ? 12 : 16), // Reducir el espacio en landscape
+          AdminBanner(),
+          SizedBox(height: isLandscape ? 8 : 10), // Reducir el espacio en landscape
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator(color: Colors.red))
                 : users.isEmpty
                     ? const Center(child: Text('No hay usuarios registrados'))
-                    : ListView.builder(
-                        itemCount: users.length,
-                        itemBuilder: (context, index) {
-                          final User user = users[index];
-                          return FadeInRight(
-                            duration: const Duration(milliseconds: 300),
-                            child: Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              elevation: 4,
-                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    : LayoutBuilder( // Usar LayoutBuilder para adaptar la lista
+                        builder: (context, constraints) {
+                          return ListView.builder(
+                            padding: EdgeInsets.symmetric(horizontal: isLandscape ? screenSize.width * 0.05 : 16), // Ajustar padding horizontal
+                            itemCount: users.length,
+                            itemBuilder: (context, index) {
+                              final User user = users[index];
+                              return FadeInRight(
+                                duration: const Duration(milliseconds: 300),
+                                child: Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  elevation: 4,
+                                  margin: EdgeInsets.symmetric(vertical: 8), // Reducir el margen horizontal en landscape
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const Icon(Icons.person, color: Colors.red),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              user.username ?? 'Sin usuario',
-                                              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.person, color: Colors.red),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  user.username ?? 'Sin usuario',
+                                                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                                                ),
+                                              ],
                                             ),
+                                            Row(
+                                              children: [
+                                                IconButton(
+                                                  icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                                  onPressed: () => _showEditUserDialog(user),
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                                  onPressed: () => deleteUser(user.id!),
+                                                ),
+                                              ],
+                                            )
                                           ],
                                         ),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                                              onPressed: () => _showEditUserDialog(user),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete, color: Colors.redAccent),
-                                              onPressed: () => deleteUser(user.id!),
-                                            ),
-                                          ],
-                                        )
+                                        const SizedBox(height: 10),
+                                        Text('📛 Nombre: ${user.nombre ?? 'Sin nombre'}', style: GoogleFonts.poppins()),
+                                        Text('✉️ Correo: ${user.email ?? 'Sin correo'}', style: GoogleFonts.poppins()),
+                                        Text('📞 Teléfono: ${user.telefono ?? 'Sin teléfono'}', style: GoogleFonts.poppins()),
+                                        Text('🏷️ Tipo: ${user.tipoUsuario ?? 'Sin tipo'}', style: GoogleFonts.poppins()),
                                       ],
                                     ),
-                                    const SizedBox(height: 10),
-                                    Text('📛 Nombre: ${user.nombre ?? 'Sin nombre'}',
-                                        style: GoogleFonts.poppins()),
-                                    Text('✉️ Correo: ${user.email ?? 'Sin correo'}',
-                                        style: GoogleFonts.poppins()),
-                                    Text('📞 Teléfono: ${user.telefono ?? 'Sin teléfono'}',
-                                        style: GoogleFonts.poppins()),
-                                    Text('🏷️ Tipo: ${user.tipoUsuario ?? 'Sin tipo'}',
-                                        style: GoogleFonts.poppins()),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -254,32 +260,36 @@ class AdminBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isLandscape = screenSize.width > screenSize.height;
+
     return Container(
-      height: 150,
+      height: isLandscape ? 120 : 150, // Reducir la altura en landscape
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.redAccent,
         borderRadius: BorderRadius.circular(12),
       ),
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(horizontal: isLandscape ? screenSize.width * 0.1 : 16), // Ajustar margen horizontal
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.center,
-      child: const Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.supervised_user_circle,
-            size: 60,
+            size: isLandscape ? 40 : 60, // Reducir el tamaño del icono en landscape
             color: Colors.white,
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Lista de Estudiantes',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: isLandscape ? 18 : 20, // Reducir el tamaño del texto en landscape
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
+            textAlign: TextAlign.center, // Asegurar que el texto esté centrado
           ),
         ],
       ),
