@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   http: ^1.3.0          # Para solicitudes HTTP (login, registro, etc.)
   web_socket_channel: ^3.0.3  # Para gestionar WebSockets
-  intl: ^0.20.2         # Para formatear fechas y números
+  intl: ^0.20.2        
   flutter_blur: ^0.0.2
   google_fonts: ^6.2.1
   animate_do: ^3.0.1

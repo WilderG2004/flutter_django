@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
 import '../services/emergency_service.dart';
 import '../models/emergency.dart';
 
@@ -18,10 +21,37 @@ class _AdminHomeViewState extends State<AdminHomeView> {
   List<Emergencia> emergencies = [];
   bool isLoading = true;
 
+  late WebSocketChannel channel;
+
   @override
   void initState() {
     super.initState();
     fetchEmergencies();
+    initWebSocket();
+  }
+
+  void initWebSocket() {
+    channel = WebSocketChannel.connect(
+    Uri.parse('wss://backend-django-l51z.onrender.com/ws/emergencias/'), 
+    );
+
+    channel.stream.listen((message) {
+      final data = jsonDecode(message);
+      if (data['tipo'] != null) {
+        fetchEmergencies(); // Actualiza la lista
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('¡Nueva emergencia recibida!')),
+        );
+      }
+    }, onError: (error) {
+      print('WebSocket error: $error');
+    });
+  }
+
+  @override
+  void dispose() {
+    channel.sink.close();
+    super.dispose();
   }
 
   Future<void> fetchEmergencies() async {
@@ -105,13 +135,20 @@ class _AdminHomeViewState extends State<AdminHomeView> {
               : LayoutBuilder(
                   builder: (context, constraints) {
                     return ListView.builder(
-                      padding: EdgeInsets.symmetric(horizontal: isLandscape ? screenSize.width * 0.05 : 16, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isLandscape ? screenSize.width * 0.05 : 16,
+                        vertical: 12,
+                      ),
                       itemCount: emergencies.length,
                       itemBuilder: (context, index) {
                         final emergency = emergencies[index];
                         return Card(
                           elevation: 4,
-                          margin: EdgeInsets.only(bottom: 12, left: isLandscape ? screenSize.width * 0.02 : 0, right: isLandscape ? screenSize.width * 0.02 : 0),
+                          margin: EdgeInsets.only(
+                            bottom: 12,
+                            left: isLandscape ? screenSize.width * 0.02 : 0,
+                            right: isLandscape ? screenSize.width * 0.02 : 0,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -120,7 +157,11 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                             leading: CircleAvatar(
                               backgroundColor: Colors.red[100],
                               radius: isLandscape ? 24 : 28,
-                              child: Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: isLandscape ? 20 : 28),
+                              child: Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.redAccent,
+                                size: isLandscape ? 20 : 28,
+                              ),
                             ),
                             title: Text(
                               emergency.tipo ?? 'Emergencia',
@@ -136,21 +177,31 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                                 children: [
                                   Text(
                                     '📍 Piso: ${emergency.piso ?? 'Desconocido'}',
-                                    style: GoogleFonts.poppins(fontSize: isLandscape ? 12 : 14),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: isLandscape ? 12 : 14,
+                                    ),
                                   ),
                                   Text(
                                     '👤 Usuario: ${emergency.usuario_nombre?.isNotEmpty == true ? emergency.usuario_nombre : 'Anónimo'}',
-                                    style: GoogleFonts.poppins(fontSize: isLandscape ? 12 : 14),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: isLandscape ? 12 : 14,
+                                    ),
                                   ),
                                   Text(
                                     '📅 Fecha: ${emergency.fecha != null ? DateFormat('yyyy-MM-dd HH:mm').format(emergency.fecha!) : 'Sin fecha'}',
-                                    style: GoogleFonts.poppins(fontSize: isLandscape ? 12 : 14),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: isLandscape ? 12 : 14,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             trailing: IconButton(
-                              icon: Icon(Icons.delete_forever, color: Colors.redAccent, size: isLandscape ? 20 : 24),
+                              icon: Icon(
+                                Icons.delete_forever,
+                                color: Colors.redAccent,
+                                size: isLandscape ? 20 : 24,
+                              ),
                               tooltip: 'Eliminar',
                               onPressed: () => deleteEmergency(emergency.id),
                             ),
