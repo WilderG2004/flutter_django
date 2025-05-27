@@ -3,7 +3,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 class EmergencySocketService {
   final _channel = WebSocketChannel.connect(
-    Uri.parse('ws:192.168.1.34:8000/ws/emergencias/'),
+    Uri.parse('wss://backend-django-l51z.onrender.com/ws/emergencias/'),
   );
 
   Stream<dynamic> get emergencyStream => _channel.stream.map((data) {
