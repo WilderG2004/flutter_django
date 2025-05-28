@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
 import '../services/emergency_service.dart';
 import '../models/emergency.dart';
+import 'package:flutter/foundation.dart'; 
 
 class AdminHomeView extends StatefulWidget {
   final String token;
@@ -31,39 +31,47 @@ class _AdminHomeViewState extends State<AdminHomeView> {
   }
 
   void initWebSocket() {
-  channel = WebSocketChannel.connect(
-    Uri.parse('wss://backend-django-l51z.onrender.com/ws/emergencias/'),
-  );
+    channel = WebSocketChannel.connect(
+      Uri.parse('wss://backend-django-l51z.onrender.com/ws/emergencias/'),
+    );
 
-  channel.stream.listen((message) {
-    final data = jsonDecode(message);
+    channel.stream.listen((message) {
+      final data = jsonDecode(message);
 
-    // Procesar ping de forma silenciosa
-    if (data['type'] == 'ping' && data['ts'] != null) {
-      final serverTime = DateTime.parse(data['ts']).toUtc();
-      final clientTime = DateTime.now().toUtc();
-      final latencyMs = clientTime.difference(serverTime).inMilliseconds;
+      
+      if (data['type'] == 'pong' && data['client_send_ts'] != null) {
+        final clientSendTs = DateTime.parse(data['client_send_ts']).toUtc();
+        final clientReceiveTs = DateTime.now().toUtc();
+        final rttMs = clientReceiveTs.difference(clientSendTs).inMilliseconds;
 
-      // Registrar latencia en consola (puedes eliminar esta línea si ni eso quieres)
-      debugPrint('Latencia WebSocket: $latencyMs ms');
+        debugPrint('Latencia WebSocket (RTT): $rttMs ms');
+        return; 
+      }
 
-      // Enviar opcionalmente un pong al servidor (sin notificar al usuario)
+      
+      if (data['tipo'] != null) {
+        fetchEmergencies();
+      }
+    }, onError: (error) {
+      debugPrint('WebSocket error: $error');
+    });
+
+    // Envía un ping inicial para medir la latencia al conectar
+    sendPingForLatency();
+  }
+
+  // Función para enviar un ping y medir la latencia RTT
+  void sendPingForLatency() {
+    if (channel.closeCode == null) {
       channel.sink.add(jsonEncode({
-        'type': 'pong',
-        'client_ts': clientTime.toIso8601String(),
+        'type': 'ping',
+        'client_send_ts': DateTime.now().toUtc().toIso8601String(),
       }));
-
-      return;
+      debugPrint('Ping para latencia enviado.');
+    } else {
+      debugPrint('No se pudo enviar ping: WebSocket cerrado.');
     }
-
-    // Emergencia recibida
-    if (data['tipo'] != null) {
-      fetchEmergencies();
-    }
-  }, onError: (error) {
-    debugPrint('WebSocket error: $error');
-  });
-}
+  }
 
   @override
   void dispose() {
@@ -136,98 +144,98 @@ class _AdminHomeViewState extends State<AdminHomeView> {
         ],
       ),
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.redAccent),
-            )
-          : emergencies.isEmpty
-              ? Center(
-                  child: Text(
-                    'No hay emergencias registradas',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      color: Colors.black54,
-                    ),
-                  ),
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.redAccent),
                 )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    return ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isLandscape ? screenSize.width * 0.05 : 16,
-                        vertical: 12,
+              : emergencies.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No hay emergencias registradas',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          color: Colors.black54,
+                        ),
                       ),
-                      itemCount: emergencies.length,
-                      itemBuilder: (context, index) {
-                        final emergency = emergencies[index];
-                        return Card(
-                          elevation: 4,
-                          margin: EdgeInsets.only(
-                            bottom: 12,
-                            left: isLandscape ? screenSize.width * 0.02 : 0,
-                            right: isLandscape ? screenSize.width * 0.02 : 0,
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        return ListView.builder(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isLandscape ? screenSize.width * 0.05 : 16,
+                            vertical: 12,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.red[100],
-                              radius: isLandscape ? 24 : 28,
-                              child: Icon(
-                                Icons.warning_amber_rounded,
-                                color: Colors.redAccent,
-                                size: isLandscape ? 20 : 28,
+                          itemCount: emergencies.length,
+                          itemBuilder: (context, index) {
+                            final emergency = emergencies[index];
+                            return Card(
+                              elevation: 4,
+                              margin: EdgeInsets.only(
+                                bottom: 12,
+                                left: isLandscape ? screenSize.width * 0.02 : 0,
+                                right: isLandscape ? screenSize.width * 0.02 : 0,
                               ),
-                            ),
-                            title: Text(
-                              emergency.tipo ?? 'Emergencia',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                fontSize: isLandscape ? 16 : 18,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '📍 Piso: ${emergency.piso ?? 'Desconocido'}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: isLandscape ? 12 : 14,
-                                    ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.all(16),
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.red[100],
+                                  radius: isLandscape ? 24 : 28,
+                                  child: Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Colors.redAccent,
+                                    size: isLandscape ? 20 : 28,
                                   ),
-                                  Text(
-                                    '👤 Usuario: ${emergency.usuario_nombre?.isNotEmpty == true ? emergency.usuario_nombre : 'Anónimo'}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: isLandscape ? 12 : 14,
-                                    ),
+                                ),
+                                title: Text(
+                                  emergency.tipo ?? 'Emergencia',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isLandscape ? 16 : 18,
                                   ),
-                                  Text(
-                                    '📅 Fecha: ${emergency.fecha != null ? DateFormat('yyyy-MM-dd HH:mm').format(emergency.fecha!) : 'Sin fecha'}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: isLandscape ? 12 : 14,
-                                    ),
+                                ),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '📍 Piso: ${emergency.piso ?? 'Desconocido'}',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: isLandscape ? 12 : 14,
+                                        ),
+                                      ),
+                                      Text(
+                                        '👤 Usuario: ${emergency.usuario_nombre?.isNotEmpty == true ? emergency.usuario_nombre : 'Anónimo'}',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: isLandscape ? 12 : 14,
+                                        ),
+                                      ),
+                                      Text(
+                                        '📅 Fecha: ${emergency.fecha != null ? DateFormat('yyyy-MM-dd HH:mm').format(emergency.fecha!) : 'Sin fecha'}',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: isLandscape ? 12 : 14,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
+                                trailing: IconButton(
+                                  icon: Icon(
+                                    Icons.delete_forever,
+                                    color: Colors.redAccent,
+                                    size: isLandscape ? 20 : 24,
+                                  ),
+                                  tooltip: 'Eliminar',
+                                  onPressed: () => deleteEmergency(emergency.id),
+                                ),
                               ),
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(
-                                Icons.delete_forever,
-                                color: Colors.redAccent,
-                                size: isLandscape ? 20 : 24,
-                              ),
-                              tooltip: 'Eliminar',
-                              onPressed: () => deleteEmergency(emergency.id),
-                            ),
-                          ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
+                    ),
     );
   }
 }
