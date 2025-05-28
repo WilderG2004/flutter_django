@@ -80,7 +80,7 @@ class _AdminUsersViewState extends State<AdminUsersView> {
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch, // Asegura que los campos ocupen el ancho
+              crossAxisAlignment: CrossAxisAlignment.stretch, 
               children: <Widget>[
                 _buildInputField('Nombre de Usuario', usernameController),
                 _buildInputField('Nombre', nameController),

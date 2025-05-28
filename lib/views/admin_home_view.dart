@@ -31,22 +31,39 @@ class _AdminHomeViewState extends State<AdminHomeView> {
   }
 
   void initWebSocket() {
-    channel = WebSocketChannel.connect(
-    Uri.parse('wss://backend-django-l51z.onrender.com/ws/emergencias/'), 
-    );
+  channel = WebSocketChannel.connect(
+    Uri.parse('wss://backend-django-l51z.onrender.com/ws/emergencias/'),
+  );
 
-    channel.stream.listen((message) {
-      final data = jsonDecode(message);
-      if (data['tipo'] != null) {
-        fetchEmergencies(); // Actualiza la lista
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Nueva emergencia recibida!')),
-        );
-      }
-    }, onError: (error) {
-      print('WebSocket error: $error');
-    });
-  }
+  channel.stream.listen((message) {
+    final data = jsonDecode(message);
+
+    // Procesar ping de forma silenciosa
+    if (data['type'] == 'ping' && data['ts'] != null) {
+      final serverTime = DateTime.parse(data['ts']).toUtc();
+      final clientTime = DateTime.now().toUtc();
+      final latencyMs = clientTime.difference(serverTime).inMilliseconds;
+
+      // Registrar latencia en consola (puedes eliminar esta línea si ni eso quieres)
+      debugPrint('Latencia WebSocket: $latencyMs ms');
+
+      // Enviar opcionalmente un pong al servidor (sin notificar al usuario)
+      channel.sink.add(jsonEncode({
+        'type': 'pong',
+        'client_ts': clientTime.toIso8601String(),
+      }));
+
+      return;
+    }
+
+    // Emergencia recibida
+    if (data['tipo'] != null) {
+      fetchEmergencies();
+    }
+  }, onError: (error) {
+    debugPrint('WebSocket error: $error');
+  });
+}
 
   @override
   void dispose() {
