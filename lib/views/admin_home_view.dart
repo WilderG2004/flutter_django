@@ -22,6 +22,7 @@ class _AdminHomeViewState extends State<AdminHomeView> {
   bool isLoading = true;
 
   late WebSocketChannel channel;
+  String? lastEmergencyNotificationIp;
 
   @override
   void initState() {
@@ -30,48 +31,58 @@ class _AdminHomeViewState extends State<AdminHomeView> {
     initWebSocket();
   }
 
-  void initWebSocket() {
-    channel = WebSocketChannel.connect(
-      Uri.parse('wss://backend-django-l51z.onrender.com/ws/emergencias/'),
-    );
+ void initWebSocket() {
+  channel = WebSocketChannel.connect(
+    Uri.parse('wss://backend-django-l51z.onrender.com/ws/emergencias/'),
+  );
 
-    channel.stream.listen((message) {
-      final data = jsonDecode(message);
+  channel.stream.listen((message) {
+    final data = jsonDecode(message);
+    debugPrint('WS recibido: $data'); // Muestra el JSON completo en consola.
 
-      
-      if (data['type'] == 'pong' && data['client_send_ts'] != null) {
-        final clientSendTs = DateTime.parse(data['client_send_ts']).toUtc();
-        final clientReceiveTs = DateTime.now().toUtc();
-        final rttMs = clientReceiveTs.difference(clientSendTs).inMilliseconds;
-
-        debugPrint('Latencia WebSocket (RTT): $rttMs ms');
-        return; 
-      }
-
-      
-      if (data['tipo'] != null) {
-        fetchEmergencies();
-      }
-    }, onError: (error) {
-      debugPrint('WebSocket error: $error');
-    });
-
-    // Envía un ping inicial para medir la latencia al conectar
-    sendPingForLatency();
-  }
-
-  // Función para enviar un ping y medir la latencia RTT
-  void sendPingForLatency() {
-    if (channel.closeCode == null) {
-      channel.sink.add(jsonEncode({
-        'type': 'ping',
-        'client_send_ts': DateTime.now().toUtc().toIso8601String(),
-      }));
-      debugPrint('Ping para latencia enviado.');
-    } else {
-      debugPrint('No se pudo enviar ping: WebSocket cerrado.');
+    // Maneja 'pong' para latencia RTT.
+    if (data['type'] == 'pong' && data['client_send_ts'] != null) {
+      final clientSendTs = DateTime.parse(data['client_send_ts']).toUtc();
+      final clientReceiveTs = DateTime.now().toUtc();
+      final rttMs = clientReceiveTs.difference(clientSendTs).inMilliseconds;
+      debugPrint('Latencia WS (RTT): $rttMs ms');
+      return;
     }
+
+    // Maneja notificaciones de nueva emergencia e imprime la IP en consola.
+    if (data['type'] == 'nueva_emergencia_notificacion') {
+      // final Map<String, dynamic> emergenciaData = data['emergencia']; // Puedes usar esto si necesitas los datos de la emergencia en consola
+      final String? notifiedIp = data['ip_administrador']; // Extrae la IP.
+      
+      debugPrint('Nueva emergencia recibida.');
+      debugPrint('IP del administrador que recibió la notificación: $notifiedIp'); // IP solo en consola.
+      
+      fetchEmergencies(); // Refresca la lista de emergencias.
+      return;
+    }
+  }, onError: (error) {
+    debugPrint('Error WS: $error');
+    // Puedes mantener el SnackBar para errores de conexión críticos si quieres.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error de conexión WebSocket: $error')),
+    );
+  });
+
+  sendPingForLatency(); // Envía ping inicial.
+}
+
+// Envía un ping para medir la latencia RTT.
+void sendPingForLatency() {
+  if (channel.closeCode == null) {
+    channel.sink.add(jsonEncode({
+      'type': 'ping',
+      'client_send_ts': DateTime.now().toUtc().toIso8601String(),
+    }));
+    debugPrint('Ping para latencia enviado.');
+  } else {
+    debugPrint('No se pudo enviar ping: WS cerrado.');
   }
+}
 
   @override
   void dispose() {
